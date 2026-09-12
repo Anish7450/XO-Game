@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OX Game</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #ff4c4c, #ff1c1c, #ff8a80);
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        .game-container {
+            text-align: center;
+            position: relative;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 5px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            font-size: 36px;
+            font-weight: bold;
+            background-color: #fff;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .cell.X {
+            color: red;
+        }
+        .cell.O {
+            color: blue;
+        }
+        #message, #turn-indicator {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffeb3b;
+            margin-bottom: 10px;
+        }
+        .win-line {
+            position: absolute;
+            background-color: #ffeb3b;
+            height: 5px;
+            border-radius: 5px;
+            transform-origin: left center;
+            transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div id="message">OX Game</div>
+        <div class="board" id="board">
+            <div class="cell" onclick="makeMove(this, 0)"></div>
+            <div class="cell" onclick="makeMove(this, 1)"></div>
+            <div class="cell" onclick="makeMove(this, 2)"></div>
+            <div class="cell" onclick="makeMove(this, 3)"></div>
+            <div class="cell" onclick="makeMove(this, 4)"></div>
+            <div class="cell" onclick="makeMove(this, 5)"></div>
+            <div class="cell" onclick="makeMove(this, 6)"></div>
+            <div class="cell" onclick="makeMove(this, 7)"></div>
+            <div class="cell" onclick="makeMove(this, 8)"></div>
+        </div>
+        <div id="turn-indicator">Turn: Player X</div>
+    </div>
+
+    <script>
+        let turn = 'X';
+        let boardState = ['', '', '', '', '', '', '', '', ''];
+        let isGameActive = true;
+        let winningCombination = [];
+
+        const winningCombinations = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], 
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+            [0, 4, 8], [2, 4, 6]             
+        ];
+
+        const messageElement = document.getElementById('message');
+        const turnIndicator = document.getElementById('turn-indicator');
+        const boardElement = document.getElementById('board');
+
+        function makeMove(cell, index) {
+            if (isGameActive && cell.innerHTML === '') {
+                cell.innerHTML = turn;
+                cell.classList.add(turn);
+                boardState[index] = turn;
+
+                if (checkWin()) {
+                    messageElement.innerHTML = `Player ${turn} Wins!`;
+                    isGameActive = false;
+                    displayWinLine();
+                    setTimeout(resetGame, 2000);
+                } else if (boardState.every(cell => cell !== '')) {
+                    messageElement.innerHTML = "Match Tie!";
+                    setTimeout(resetGame, 2000);
+                } else {
+                    turn = (turn === 'X') ? 'O' : 'X';
+                    turnIndicator.innerHTML = `Turn: Player ${turn}`;
+                }
+            }
+        }
+
+        function checkWin() {
+            return winningCombinations.some(combination => {
+                const [a, b, c] = combination;
+                if (boardState[a] === turn && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+                    winningCombination = combination;
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        function displayWinLine() {
+            const [a, b, c] = winningCombination;
+            const cells = document.querySelectorAll(".cell");
+
+            const start = cells[a].getBoundingClientRect();
+            const end = cells[c].getBoundingClientRect();
+            const boardRect = boardElement.getBoundingClientRect();
+
+            const line = document.createElement("div");
+            line.classList.add("win-line");
+
+            // Calculate start and end coordinates relative to the board
+            const startX = start.left + start.width / 2 - boardRect.left;
+            const startY = start.top + start.height / 2 - boardRect.top;
+            const endX = end.left + end.width / 2 - boardRect.left;
+            const endY = end.top + end.height / 2 - boardRect.top;
+
+            // Calculate line length and angle
+            const length = Math.hypot(endX - startX, endY - startY);
+            const angle = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
+            // Apply styles dynamically
+            line.style.width = `${length}px`;
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.left = `${startX}px`;
+            line.style.top = `${startY}px`;
+
+            boardElement.appendChild(line);
+        }
+
+        function resetGame() {
+            boardState = ['', '', '', '', '', '', '', '', ''];
+            isGameActive = true;
+            turn = 'X';
+            messageElement.innerHTML = 'OX Game';
+            turnIndicator.innerHTML = `Turn: Player ${turn}`;
+            Array.from(boardElement.children).forEach(cell => {
+                cell.innerHTML = '';
+                cell.classList.remove('X', 'O');
+            });
+            const line = document.querySelector('.win-line');
+            if (line) line.remove();
+        }
+    </script>
+</body>
+  </html>
